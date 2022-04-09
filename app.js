@@ -1,3 +1,5 @@
+// Application Express
+
 const express = require("express");
 
 const app = express();
@@ -5,8 +7,9 @@ const app = express();
 app.use(express.json());
 
 const stuffRoutes = require("./routes/stuff");
+const userRoutes = require('./routes/user');
 
-const dotenv = require("dotenv").config();
+require("dotenv").config();
 
 const mongoose = require("mongoose");
 
@@ -35,5 +38,6 @@ app.use((req, res, next) => {
 });
 
 // *************** fin de middleware ****************************
-app.use("/api/stuff", stuffRoutes);
+app.use('/api/stuff', stuffRoutes);
+app.use('/api/auth', userRoutes);
 module.exports = app;
