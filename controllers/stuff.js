@@ -3,21 +3,29 @@
 const Thing = require("../models/Thing");
 
 /*createThing() est une fonction ===
-  Envoyer l'objet dans la base de données
+  Pour ajouter un fichier à la requête, le front-end doit envoyer les données de la requête sous la forme form-data, 
+  et non sous forme de JSON. 
+  Le corps de la requête contient une chaîne thing qui est simplement un objet Thing converti en chaîne. 
+  Nous devons donc l'analyser à l'aide de JSON.parse() pour obtenir un objet utilisable.
   Ici, vous créez une instance de votre modèle Thing 
   en lui passant un objet JavaScript contenant toutes 
   les informations requises du corps de requête analysé 
   (en ayant supprimé en amont le faux_id envoyé par le front-end).
+  Nous utilisons req.protocol pour obtenir le premier segment (dans notre cas 'http' ).
+  Nous ajoutons '://' , puis utilisons req.get('host') pour résoudre l'hôte du serveur (ici, 'localhost:3000' ). 
+  Nous ajoutons finalement '/images/' et le nom de fichier pour compléter notre URL.
   La méthode save() enregistre simplement votre Thing dans la base de données.
 */
 exports.createThing = (req, res, next) => {
-  delete req.body._id;
+  const thingObject = JSON.parse(req.body.thing);
+  delete thingObject._id;
   const thing = new Thing({
-    ...req.body,
+    ...thingObject,
+    imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
   });
   thing.save()
-    .then(() => res.status(201).json({ message: "Objet enregistré !" }))
-    .catch((error) => res.status(400).json({ error }));
+    .then(() => res.status(201).json({ message: 'Objet enregistré !'}))
+    .catch(error => res.status(400).json({ error }));
 };
 
 /*getOneThing() est une fonction ===
@@ -36,15 +44,23 @@ exports.getOneThing = (req, res, next) => {
 
 /*modifyThing() est une fonction ===
   Modification de l'élément ou Thing
+  On crée un objet thingObject qui regarde si req.file existe ou non. 
+  S'il existe, on traite la nouvelle image ; s'il n'existe pas, on traite simplement l'objet entrant. 
+  On crée ensuite une instance Thing à partir de thingObject , puis on effectue la modification.
   La méthode updateOne() permet de mettre à jour 
   le Thing qui correspond à l'objet que nous passons comme premier argument. 
   Nous utilisons aussi le paramètre id passé dans la demande, 
   et le remplaçons par le Thing passé comme second argument.
 */
 exports.modifyThing = (req, res, next) => {
-  Thing.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
-    .then(() => res.status(200).json({ message: "Objet modifié !" }))
-    .catch((error) => res.status(400).json({ error }));
+  const thingObject = req.file ?
+    {
+      ...JSON.parse(req.body.thing),
+      imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    } : { ...req.body };
+  Thing.updateOne({ _id: req.params.id }, { ...thingObject, _id: req.params.id })
+    .then(() => res.status(200).json({ message: 'Objet modifié !'}))
+    .catch(error => res.status(400).json({ error }));
 };
 
 /*deleteThing() est une fonction ===
