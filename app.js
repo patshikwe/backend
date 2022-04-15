@@ -11,7 +11,7 @@ const userRoutes = require('./routes/user');
 require("dotenv").config();
 
 
-// Logique de connexion à MongoDB
+// ************ Logique de connexion à MongoDB ********************
 mongoose
   .connect(
     `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.jdge6.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
@@ -19,7 +19,7 @@ mongoose
   )
   .then(() => console.log("Connexion à MongoDB réussie !"))
   .catch(() => console.log("Connexion à MongoDB échouée !"));
-
+// ==========================================================
 const app = express();
 
 // *************** Middleware ********************************
@@ -37,7 +37,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// *************** fin de middleware ****************************
+// =====================================================================
+// *************** Gestionnaire de routage *****************************
 
 // app.use(bodyParser.json());
 app.use(express.json());
@@ -45,5 +46,5 @@ app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/stuff', stuffRoutes);
 app.use('/api/auth', userRoutes);
-
+// =====================================================================
 module.exports = app;

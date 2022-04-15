@@ -1,6 +1,7 @@
 // Fichier logique métier
 
 const Thing = require("../models/Thing");
+const fs = require('fs');
 
 /*createThing() est une fonction ===
   Pour ajouter un fichier à la requête, le front-end doit envoyer les données de la requête sous la forme form-data, 
@@ -66,38 +67,26 @@ exports.modifyThing = (req, res, next) => {
 /*deleteThing() est une fonction ===
   Supprimer un élément ou un Thing
   Avec la méthode findOne seul le propriétaire d'un Thing peut le supprimer.
+  Nous utilisons l'ID que nous recevons comme paramètre pour accéder au Thing correspondant dans la base de données ;
+  Avec la méthode split('/images/')[1], nous récupérons le nom du fichier.
+  Ensuite la fonction unlink du package fs pour supprimer ce fichier, 
+  en lui passant le fichier à supprimer et le callback à exécuter une fois ce fichier supprimé ;
+  dans le callback, nous implémentons la logique d'origine, en supprimant le Thing de la base de données.
   La méthode deleteOne() de notre modèle fonctionne comme findOne() et updateOne() 
   dans le sens où nous lui passons un objet correspondant au document à supprimer.
   Nous envoyons ensuite une réponse de réussite ou d'échec au front-end.
 */
 exports.deleteThing = (req, res, next) => {
-  Thing.findOne({ _id: req.params.id }).then(
-    (thing) => {
-      if (!thing) {
-        res.status(404).json({
-          error: new Error('No such Thing!')
-        });
-      }
-      if (thing.userId !== req.auth.userId) {
-        res.status(400).json({
-          error: new Error('Unauthorized request!')
-        });
-      }
-      Thing.deleteOne({ _id: req.params.id }).then(
-        () => {
-          res.status(200).json({
-            message: 'Deleted!'
-          });
-        }
-      ).catch(
-        (error) => {
-          res.status(400).json({
-            error: error
-          });
-        }
-      );
-    }
-  )
+  Thing.findOne({ _id: req.params.id })
+    .then(thing => {
+      const filename = thing.imageUrl.split('/images/')[1];
+      fs.unlink(`images/${filename}`, () => {
+        Thing.deleteOne({ _id: req.params.id })
+          .then(() => res.status(200).json({ message: 'Objet supprimé !'}))
+          .catch(error => res.status(400).json({ error }));
+      });
+    })
+    .catch(error => res.status(500).json({ error }));
 };
 
 /*getAllStuff() est une fonction ===
